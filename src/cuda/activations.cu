@@ -32,7 +32,7 @@ std::vector<float> tensor_engine::cuda::relu(const std::vector<float>& host_inpu
 
     // Configure Grid & Launch the Kernel (<<<grid, block>>>)
     int block_size = 256;
-    int grid_size = (size + block_size - 1) / block_size; // Ceiling division!
+    int grid_size = static_cast<int>((size + block_size - 1) / block_size); // Ceiling division!
 
     relu_kernel<<<grid_size, block_size>>>(d_input, d_output, size);
     cudaDeviceSynchronize(); // Wait for GPU to finish

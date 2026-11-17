@@ -52,3 +52,41 @@ TEST(GPUGemmTest, GPUSpeedBenchmark)
 
     EXPECT_TRUE(duration_gpu < duration_cpu);
 }
+
+TEST(GPUTiledGemmTest, CorrectnessCheck)
+{
+    Matrix test_matrix_a = Matrix::random(10, 15);
+    Matrix test_matrix_b = Matrix::random(15, 20);
+    Matrix test_matrix_error = Matrix::random(19, 20);
+
+    EXPECT_THROW(tensor_engine::cuda::cudaTiledMatmul(test_matrix_a, test_matrix_error), std::invalid_argument);
+    Matrix gpu_matmul = tensor_engine::cuda::cudaTiledMatmul(test_matrix_a, test_matrix_b);
+    Matrix cpu_matmul = Matrix::multiplySequential(test_matrix_a, test_matrix_b);
+
+    for (size_t i = 0; i < gpu_matmul.rows(); ++i) {
+        for (size_t j = 0; j < gpu_matmul.cols(); ++j) {
+            EXPECT_NEAR(gpu_matmul(i, j), cpu_matmul(i, j), 1e-4F);
+        }
+    }
+}
+
+TEST(GPUTiledGemmTest, GPUSpeedBenchmark)
+{
+    Matrix test_matrix_a = Matrix::random(1000, 1200);
+    Matrix test_matrix_b = Matrix::random(1200, 1500);
+
+    ThreadPool test_pool(4);
+
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+
+    tensor_engine::cuda::cudaMatmul(test_matrix_a, test_matrix_b);
+    auto duration_naive_matmul = std::chrono::high_resolution_clock::now() - t1;
+    std::cout << "Duration when matrix multiplication by CPU " << duration_naive_matmul << std::endl;
+
+    std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+    tensor_engine::cuda::cudaTiledMatmul(test_matrix_a, test_matrix_b);
+    auto duration_tiled_matmul = std::chrono::high_resolution_clock::now() - t2;
+    std::cout << "Duration when matrix multiplication by GPU " << duration_tiled_matmul << std::endl;
+
+    EXPECT_TRUE(duration_tiled_matmul < duration_naive_matmul);
+}
