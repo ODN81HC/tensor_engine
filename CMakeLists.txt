@@ -21,6 +21,7 @@ add_library(tensor_engine_core STATIC
     src/thread_pool.cpp
     src/cuda/activations.cu
     src/cuda/gemm.cu
+    src/cuda/cuda_stream.cu
 )
 
 target_include_directories(tensor_engine_core PUBLIC
@@ -41,7 +42,7 @@ myproject_set_project_warnings(tensor_engine_core FALSE "" "" "" "")
 target_compile_options(tensor_engine_core PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:${PROJECT_WARNINGS_CXX}>
     $<$<COMPILE_LANGUAGE:CUDA>:${PROJECT_WARNINGS_CUDA}>
- )
+)
 
 enable_testing()
 find_package(GTest REQUIRED)

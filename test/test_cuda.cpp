@@ -5,6 +5,8 @@
 #include "gemm.cuh"
 #include "matrix.hpp"
 #include "thread_pool.hpp"
+#include "pinned_vector.cuh"
+#include "cuda_stream.cuh"
 
 TEST(ActivationsTest, ReLUTest)
 {
@@ -89,4 +91,25 @@ TEST(GPUTiledGemmTest, GPUSpeedBenchmark)
     std::cout << "Duration when matrix multiplication by GPU " << duration_tiled_matmul << std::endl;
 
     EXPECT_TRUE(duration_tiled_matmul < duration_naive_matmul);
+}
+
+TEST(CudaStreamTest, ObjectCheck)
+{
+    using namespace tensor_engine::cuda;
+    CudaStream test_cuda_stream = CudaStream();
+    CudaStream test_cuda_stream_moved = std::move(test_cuda_stream);
+
+    EXPECT_EQ(test_cuda_stream.get(), nullptr);
+    EXPECT_TRUE(test_cuda_stream_moved.get() != nullptr);
+
+    PinnedVector<float> test_pinned_vector(100);
+    for (size_t i = 0; i < test_pinned_vector.size(); ++i)
+    {
+        test_pinned_vector[i] = static_cast<float>(i);
+    }
+    EXPECT_FLOAT_EQ(test_pinned_vector[10], 10.0F);
+
+    PinnedVector<float> test_pinned_vector_moved = std::move(test_pinned_vector);
+    EXPECT_EQ(test_pinned_vector.data(), nullptr);
+    EXPECT_FLOAT_EQ(test_pinned_vector_moved[15], 15.0F);
 }
