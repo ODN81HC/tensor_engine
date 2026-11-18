@@ -21,11 +21,14 @@ add_library(tensor_engine_core STATIC
     src/thread_pool.cpp
     src/cuda/activations.cu
     src/cuda/gemm.cu
+    src/cuda/cuda_stream.cu
 )
 
 target_include_directories(tensor_engine_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/cuda
+)
+target_include_directories(tensor_engine_core SYSTEM PUBLIC
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
 
@@ -36,7 +39,10 @@ target_link_libraries(tensor_engine_core PUBLIC
 
 include(cmake/CompilerWarnings.cmake)
 myproject_set_project_warnings(tensor_engine_core FALSE "" "" "" "")
-target_compile_options(tensor_engine_core PRIVATE ${PROJECT_WARNINGS_CXX})
+target_compile_options(tensor_engine_core PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:${PROJECT_WARNINGS_CXX}>
+    $<$<COMPILE_LANGUAGE:CUDA>:${PROJECT_WARNINGS_CUDA}>
+)
 
 enable_testing()
 find_package(GTest REQUIRED)
@@ -44,7 +50,7 @@ find_package(GTest REQUIRED)
 add_executable(test_tensor_engine_core
     test/test_gemm.cpp
     test/test_thread_pool.cpp
-    test/test_activations.cpp
+    test/test_cuda.cpp
 )
 # Tell CMake: "This test needs symbols and headers from tensor_engine_core and GoogleTest"
 target_link_libraries(test_tensor_engine_core PRIVATE

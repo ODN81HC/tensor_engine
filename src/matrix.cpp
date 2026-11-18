@@ -11,7 +11,7 @@ Matrix::Matrix(size_t rows, size_t cols, float initial_val):
 float& Matrix::operator()(size_t row, size_t col)
 {
     if (row >= rows_ || col >= cols_) {
-        throw std::out_of_range("Matrix subscript out of range");
+        throw std::out_of_range{"Matrix subscript out of range"};
     }
     return data_[row * cols_ + col];
 }
@@ -19,7 +19,7 @@ float& Matrix::operator()(size_t row, size_t col)
 const float& Matrix::operator()(size_t row, size_t col) const
 {
     if (row >= rows_ || col >= cols_) {
-        throw std::out_of_range("Matrix subscript out of range");
+        throw std::out_of_range{"Matrix subscript out of range"};
     }
     return data_[row * cols_ + col];
 }
@@ -62,7 +62,7 @@ Matrix Matrix::random(size_t rows, size_t cols)
 Matrix Matrix::multiplySequential(const Matrix& mat_a, const Matrix& mat_b)
 {
     if (mat_a.cols() != mat_b.rows()) {
-        throw std::invalid_argument("Incompatible matrix dimensions for multiplication");
+        throw std::invalid_argument{"Incompatible matrix dimensions for multiplication"};
     }
     Matrix result(mat_a.rows(), mat_b.cols());
     for (size_t i = 0; i < mat_a.rows(); ++i) {
@@ -80,7 +80,7 @@ Matrix Matrix::multiplySequential(const Matrix& mat_a, const Matrix& mat_b)
 Matrix Matrix::multiplyParallel(const Matrix& mat_a, const Matrix& mat_b, ThreadPool& pool)
 {
     if (mat_a.cols() != mat_b.rows()) {
-        throw std::invalid_argument("Incompatible matrix dimensions for multiplication");
+        throw std::invalid_argument{"Incompatible matrix dimensions for multiplication"};
     }
     Matrix result(mat_a.rows(), mat_b.cols());
     std::latch done_latch(static_cast<std::ptrdiff_t>(result.rows()));
