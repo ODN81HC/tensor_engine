@@ -22,6 +22,7 @@ add_library(tensor_engine_core STATIC
     src/cuda/activations.cu
     src/cuda/gemm.cu
     src/cuda/cuda_stream.cu
+    src/cuda/image_processing.cu
 )
 
 target_include_directories(tensor_engine_core PUBLIC
@@ -61,3 +62,7 @@ target_link_libraries(test_tensor_engine_core PRIVATE
 target_compile_options(test_tensor_engine_core PRIVATE ${PROJECT_WARNINGS_CXX})
 include(GoogleTest)
 gtest_discover_tests(test_tensor_engine_core)
+
+# Dual camera GPU
+add_executable(dual_cam_pipeline src/main_dual_cam.cpp)
+target_link_libraries(dual_cam_pipeline PRIVATE tensor_engine_core ${OpenCV_LIBS})
