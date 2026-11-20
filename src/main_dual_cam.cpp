@@ -23,7 +23,7 @@ int main()
     // Verify if webcams are working and query frame width and height
     if (!cap_0.isOpened())
     {
-        std::cerr << "Cannot open laptop webcam!" << std::endl;
+        std::cerr << "Cannot open laptop webcam!\n";
         return 1;
     }
     else
@@ -34,7 +34,7 @@ int main()
 
     if (!cap_4.isOpened())
     {
-        std::cerr << "Cannot open remote webcam!" << std::endl;
+        std::cerr << "Cannot open remote webcam!\n";
         return 1;
     }
     else
@@ -46,7 +46,8 @@ int main()
     CameraStreamPipeline camera_stream_pipeline_0(width_cap_0, height_cap_0);
     CameraStreamPipeline camera_stream_pipeline_4(width_cap_4, height_cap_4);
 
-    cv::Mat frame_0, frame_4;
+    cv::Mat frame_0; 
+    cv::Mat frame_4;
     while (cap_0.read(frame_0) && cap_4.read(frame_4))
     {
         camera_stream_pipeline_0.submit_async(frame_0);
