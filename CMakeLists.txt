@@ -19,9 +19,11 @@ find_package(OpenCV REQUIRED)
 add_library(tensor_engine_core STATIC
     src/matrix.cpp
     src/thread_pool.cpp
+    src/camera_stream_pipeline.cpp
     src/cuda/activations.cu
     src/cuda/gemm.cu
     src/cuda/cuda_stream.cu
+    src/cuda/image_processing.cu
 )
 
 target_include_directories(tensor_engine_core PUBLIC
@@ -51,6 +53,7 @@ add_executable(test_tensor_engine_core
     test/test_gemm.cpp
     test/test_thread_pool.cpp
     test/test_cuda.cpp
+    test/test_tensor.cpp
 )
 # Tell CMake: "This test needs symbols and headers from tensor_engine_core and GoogleTest"
 target_link_libraries(test_tensor_engine_core PRIVATE
@@ -61,3 +64,7 @@ target_link_libraries(test_tensor_engine_core PRIVATE
 target_compile_options(test_tensor_engine_core PRIVATE ${PROJECT_WARNINGS_CXX})
 include(GoogleTest)
 gtest_discover_tests(test_tensor_engine_core)
+
+# Dual camera GPU
+add_executable(dual_cam_pipeline src/main_dual_cam.cpp)
+target_link_libraries(dual_cam_pipeline PRIVATE tensor_engine_core ${OpenCV_LIBS})
