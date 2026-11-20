@@ -54,7 +54,7 @@ int main()
         camera_stream_pipeline_4.submit_async(frame_4);
         // Process and get output frame to CPU
         const cv::Mat mat_out_0 = camera_stream_pipeline_0.sync_and_get_frame();
-        const cv::Mat mat_out_4 = camera_stream_pipeline_4.sync_and_get_frame();
+        cv::Mat mat_out_4 = camera_stream_pipeline_4.sync_and_get_frame();
 
         // Stitch them horizontally
         if (height_cap_0 != height_cap_4 || width_cap_0 != width_cap_4)
