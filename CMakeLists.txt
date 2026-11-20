@@ -19,6 +19,7 @@ find_package(OpenCV REQUIRED)
 add_library(tensor_engine_core STATIC
     src/matrix.cpp
     src/thread_pool.cpp
+    src/camera_stream_pipeline.cpp
     src/cuda/activations.cu
     src/cuda/gemm.cu
     src/cuda/cuda_stream.cu

@@ -21,7 +21,6 @@ __global__ void bgr_to_grayscale_kernel(const uint8_t* d_in, uint8_t* d_out, int
         float luminance_gray = 0.299F * static_cast<float>(R_in) + 0.587F * static_cast<float>(G_in) + 0.114F * static_cast<float>(B_in);
 
         d_out[pixel_idx] = static_cast<uint8_t>(luminance_gray);
-        // Do I need __syncthreads() here?
     }
 }
 
