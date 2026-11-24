@@ -66,3 +66,49 @@ TEST(TensorTest, SliceTensorOperation)
     EXPECT_FLOAT_EQ(slice_tensor({0, 0}), test_cpu_tensor({0, 1}));
     EXPECT_FLOAT_EQ(slice_tensor({1, 0}), test_cpu_tensor({1, 1}));
 }
+
+TEST(TensorTest, GEMMTiledMatmul)
+{
+    Tensor tensor_cpu_1({4, 5}, Device::CPU);
+    Tensor tensor_cpu_2({5, 10}, Device::CPU);
+    Tensor tensor_cuda_wrong({2, 3, 4}, Device::CUDA);
+
+    // Fill in some values
+    tensor_cpu_1({0, 0}) = 10.0F;
+    tensor_cpu_2({0, 0}) = 10.0F;
+
+    // Convert to CUDA Tensor
+    Tensor tensor_cuda_1 = tensor_cpu_1.to(Device::CUDA);
+    Tensor tensor_cuda_2 = tensor_cpu_2.to(Device::CUDA);
+
+    EXPECT_THROW(tensor_cuda_1.matmul(tensor_cuda_wrong), std::invalid_argument);
+    Tensor result_matmul_cuda = tensor_cuda_1.matmul(tensor_cuda_2);
+
+    // Convert back to CPU
+    Tensor result_matmul_cpu = result_matmul_cuda.to(Device::CPU);
+    EXPECT_FLOAT_EQ(result_matmul_cpu({0, 0}), 100.0F);
+}
+
+TEST(TensorTest, ReLUOperation)
+{
+    Tensor tensor_cpu_1({4, 5}, Device::CPU);
+    
+    tensor_cpu_1({0, 0}) = 10.0F;
+    tensor_cpu_1({1, 0}) = -10.0F;
+
+    // Convert to CUDA
+    Tensor tensor_cuda_1 = tensor_cpu_1.to(Device::CUDA);
+
+    Tensor result_relu_tensor = tensor_cuda_1.relu();
+
+    // Convert back to CPU
+    Tensor result_cpu = result_relu_tensor.to(Device::CPU);
+
+    EXPECT_FLOAT_EQ(result_cpu({0, 0}), 10.0F);
+    EXPECT_FLOAT_EQ(result_cpu({1, 0}), 0.0F);
+    
+    // Test in-place
+    tensor_cuda_1.relu_();
+    Tensor in_place_cpu = tensor_cuda_1.to(Device::CPU);
+    EXPECT_FLOAT_EQ(in_place_cpu({1, 0}), 0.0F);
+}

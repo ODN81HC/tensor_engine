@@ -5,6 +5,10 @@
 #include <stdexcept>
 #include <cuda_runtime.h>
 
+#include "activations.cuh"
+#include "gemm.cuh"
+#include "cuda_stream.cuh"
+
 enum class Device
 {
     CPU,
@@ -231,7 +235,7 @@ public:
 
     // Zero-copy operations
     bool is_contiguous() const noexcept { return strides_ == tensor_shape_.contiguous_strides(); };
-    Tensor reshape(const std::vector<size_t>& new_dims) const
+    [[nodiscard]] Tensor reshape(const std::vector<size_t>& new_dims) const
     {
         TensorShape new_tensor_shape(new_dims);
         if (new_tensor_shape.total_elements() != tensor_shape_.total_elements())
@@ -250,7 +254,7 @@ public:
         }
     }
 
-    Tensor transpose(size_t dim0 = 0, size_t dim1 = 1) const
+    [[nodiscard]] Tensor transpose(size_t dim0 = 0, size_t dim1 = 1) const
     {
         if (dim0 < tensor_shape_.nDims() && dim1 < tensor_shape_.nDims())
         {
@@ -269,7 +273,7 @@ public:
         }
     }
 
-    Tensor slice(size_t dim, size_t start, size_t end) const
+    [[nodiscard]] Tensor slice(size_t dim, size_t start, size_t end) const
     {
         if (dim < tensor_shape_.nDims() && start < end && end <= tensor_shape_[dim])
         {
@@ -288,7 +292,7 @@ public:
     }
 
     // Device transfer
-    Tensor to(Device target_device) const
+    [[nodiscard]] Tensor to(Device target_device) const
     {
         if (device() == target_device)
         {
@@ -307,5 +311,98 @@ public:
             }
             return destination_tensor;
         }
+    }
+
+    // Tensor matrix matmul
+    [[nodiscard]] Tensor matmul(const Tensor& other_tensor) const
+    {
+        // Verify if devices are similar
+        if (this->device() != other_tensor.device())
+        {
+            throw std::invalid_argument{"Device are not similar!"};
+        }
+        // Dimension check
+        if (tensor_shape_.nDims() != 2 || other_tensor.shape().nDims() != 2)
+        {
+            throw std::invalid_argument{"Tensor must be a matrix (dimension = 2)"};
+        }
+        else if (tensor_shape_[1] != other_tensor.shape()[0])
+        {
+            throw std::invalid_argument{"Dimension does not match, this tensor column must match others' row dimensions"};
+        }
+        // Contiguous check
+        if (!this->is_contiguous() || !other_tensor.is_contiguous())
+        {
+            throw std::invalid_argument{"Both tensor must be contiguous!"};
+        }
+
+        auto dim_m = tensor_shape_.dims()[0];
+        auto dim_k = tensor_shape_.dims()[1];
+        auto dim_n = other_tensor.shape()[1];        
+
+        Tensor result_tensor({dim_m, dim_n}, this->device());
+        if (this->device() == Device::CUDA)
+        {   
+            tensor_engine::cuda::CudaStream stream_matmul;
+            tensor_engine::cuda::launchTiledGemm(this->data(), other_tensor.data(), result_tensor.data(), dim_m, dim_k, dim_n, stream_matmul.get());
+            stream_matmul.synchronize(); // Async the stream until it finishes running
+        }
+        else if (this->device() == Device::CPU)
+        {
+            // Loop over m -> k -> n
+            for (size_t m = 0; m < dim_m; ++m)
+            {
+                for (size_t n = 0; n < dim_n; ++n)
+                {
+                    auto result = 0.0f;
+                    for (size_t k = 0; k < dim_k; ++k)
+                    {
+                        result += (*this)({m, k}) * other_tensor({k, n});
+                    }
+                    result_tensor({m, n}) = result;
+                }
+            }
+        }
+        return result_tensor;
+    }
+
+    // Implement relu() function
+    // Out-of-place: This will create another tensor that takes ReLU() operations
+    [[nodiscard]] Tensor relu() const
+    {
+        Tensor result_tensor(tensor_shape_.dims(), device());
+        if (device() == Device::CUDA)
+        {
+            tensor_engine::cuda::CudaStream relu_stream;
+            tensor_engine::cuda::launchRelu(this->data(), result_tensor.data(), tensor_shape_.total_elements(), relu_stream.get());
+            relu_stream.synchronize(); // Wait until process finishes
+        }
+        else if (device() == Device::CPU)
+        {
+            for (size_t i = 0; i < result_tensor.total_elements(); ++i)
+            {
+                result_tensor.data()[i] = this->data()[i] >= 0 ? this->data()[i] : 0.0F;
+            }
+        }
+        return result_tensor;
+    }
+
+    // This in-place will change the Tensor values into a relu
+    Tensor& relu_()
+    {
+        if (device() == Device::CUDA)
+        {
+            tensor_engine::cuda::CudaStream in_place_relu_stream;
+            tensor_engine::cuda::launchRelu(this->data(), this->data(), tensor_shape_.total_elements(), in_place_relu_stream.get());
+            in_place_relu_stream.synchronize(); // Wait until the process finishes
+        }
+        else if (device() == Device::CPU)
+        {
+            for (size_t i = 0; i < tensor_shape_.total_elements(); ++i)
+            {
+                this->data()[i] = this->data()[i] >= 0 ? this->data()[i] : 0.0F;
+            }
+        }
+        return *this;
     }
 };
