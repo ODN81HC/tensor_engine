@@ -3,7 +3,8 @@
 
 #include <cuda_runtime.h>
 
-using namespace tensor_engine::cuda;
+namespace tensor_engine::cuda
+{
 
 __global__ void gemm_tiled_matmul_kernel(const float* a, const float* b, float* c, size_t m, size_t k_dim, size_t n)
 {
@@ -71,7 +72,7 @@ __global__ void gemm_naive_matmul_kernel(const float* a, const float* b, float* 
 
 }
 
-Matrix tensor_engine::cuda::cudaMatmul(const Matrix& mat_a, const Matrix& mat_b)
+Matrix cudaMatmul(const Matrix& mat_a, const Matrix& mat_b)
 {
     if (mat_a.cols() != mat_b.rows())
     {
@@ -122,7 +123,7 @@ Matrix tensor_engine::cuda::cudaMatmul(const Matrix& mat_a, const Matrix& mat_b)
     return mat_c;
 }
 
-Matrix tensor_engine::cuda::cudaTiledMatmul(const Matrix& mat_a, const Matrix& mat_b)
+Matrix cudaTiledMatmul(const Matrix& mat_a, const Matrix& mat_b)
 {
     if (mat_a.cols() != mat_b.rows())
     {
@@ -172,3 +173,16 @@ Matrix tensor_engine::cuda::cudaTiledMatmul(const Matrix& mat_a, const Matrix& m
 
     return mat_c;
 }
+
+void launchTiledGemm(const float* a, const float* b, float* c, size_t m, size_t k, size_t n, cudaStream_t stream)
+{
+    dim3 block_dim(16, 16);
+    dim3 grid_dim(
+        static_cast<unsigned int>((n + block_dim.x - 1) / block_dim.x),
+        static_cast<unsigned int>((m + block_dim.y - 1) / block_dim.y)
+    );
+    
+    gemm_tiled_matmul_kernel<<<grid_dim, block_dim, 0, stream>>>(a, b, c, m, k, n);
+}
+
+} // namespace tensor_engine::cuda

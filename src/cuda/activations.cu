@@ -2,7 +2,8 @@
 
 #include <cuda_runtime.h>
 
-using namespace tensor_engine::cuda;
+namespace tensor_engine::cuda
+{
 
 __global__ void relu_kernel(const float* input, float* output, size_t size)
 {
@@ -15,7 +16,7 @@ __global__ void relu_kernel(const float* input, float* output, size_t size)
     }
 }
 
-std::vector<float> tensor_engine::cuda::relu(const std::vector<float>& host_input)
+std::vector<float> relu(const std::vector<float>& host_input)
 {
     // Calculate byte size
     size_t size = host_input.size();
@@ -47,3 +48,13 @@ std::vector<float> tensor_engine::cuda::relu(const std::vector<float>& host_inpu
 
     return host_output;
 }
+
+void launchRelu(const float* input, float* output, size_t size, cudaStream_t stream)
+{
+    int block_size = 256;
+    int grid_size = static_cast<int>((size + block_size - 1) / block_size);
+
+    relu_kernel<<<grid_size, block_size, 0, stream>>>(input, output, size);
+}
+
+} // namespace tensor_engine::cuda
