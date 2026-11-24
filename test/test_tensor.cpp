@@ -3,7 +3,7 @@
 
 #include "tensor.hpp"
 
-TEST(TensorTest, CreateAndOperationsWithTensor)
+TEST(TensorTest, CreateAndOperationsWithTensorShape)
 {
     TensorShape test_tensor_shape(std::vector<size_t>{2, 3, 4, 4});
     EXPECT_EQ(test_tensor_shape.total_elements(), 96);
@@ -21,4 +21,48 @@ TEST(TensorTest, CreateAndOperationsWithTensor)
     EXPECT_EQ(test_1D_element.contiguous_strides(), strides_1d);
     EXPECT_EQ(test_1D_element.total_elements(), 10);
 
+}
+
+TEST(TensorTest, CreateAndOperationsWithTensor)
+{
+    Tensor test_cpu_tensor({2, 3, 4}, Device::CPU);
+    Tensor test_cuda_tensor({2, 6, 4}, Device::CUDA);
+
+    // Operations on CPU
+    test_cpu_tensor({0, 0, 1}) = 2.0f;
+    test_cpu_tensor({0, 0, 2}) = 3.0f;
+    test_cpu_tensor({1, 0, 0}) = 10.0f;
+
+    EXPECT_FLOAT_EQ(test_cpu_tensor({1, 0, 0}), 10.0f);
+    EXPECT_FLOAT_EQ(test_cpu_tensor({0, 0, 2}), 3.0f);
+
+    // Reshape
+    Tensor new_reshaped_tensor = test_cuda_tensor.reshape({12, 4});
+    // Check if the underlying is the same data
+    EXPECT_EQ(new_reshaped_tensor.data(), test_cuda_tensor.data());
+}
+
+TEST(TensorTest, TransposeTensorOperation)
+{
+    Tensor test_cpu_tensor({2, 3, 4}, Device::CPU);
+
+    // Transpose
+    Tensor transpose_tensor = test_cpu_tensor.transpose(0, 2);
+    EXPECT_EQ(transpose_tensor.shape()[0], 4);
+    EXPECT_EQ(transpose_tensor.shape()[2], 2);
+
+    EXPECT_FALSE(transpose_tensor.is_contiguous());
+}
+
+TEST(TensorTest, SliceTensorOperation)
+{
+    Tensor test_cpu_tensor({2, 3}, Device::CPU);
+
+    // Add some elements
+    test_cpu_tensor({0, 1}) = 50.0F;
+    test_cpu_tensor({1, 1}) = 49.9F;
+    // Slice
+    Tensor slice_tensor = test_cpu_tensor.slice(1, 1, 2);
+    EXPECT_FLOAT_EQ(slice_tensor({0, 0}), test_cpu_tensor({0, 1}));
+    EXPECT_FLOAT_EQ(slice_tensor({1, 0}), test_cpu_tensor({1, 1}));
 }
