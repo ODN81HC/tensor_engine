@@ -16,14 +16,19 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 find_package(Eigen3 3.4 REQUIRED)
 find_package(OpenCV REQUIRED)
 
+# Dual camera with .engine
+find_library(NVINFER_LIB nvinfer REQUIRED)
+
 add_library(tensor_engine_core STATIC
     src/matrix.cpp
     src/thread_pool.cpp
     src/camera_stream_pipeline.cpp
+    src/trt_engine.cpp
     src/cuda/activations.cu
     src/cuda/gemm.cu
     src/cuda/cuda_stream.cu
     src/cuda/image_processing.cu
+    src/cuda/vision_kernels.cu
 )
 
 target_include_directories(tensor_engine_core PUBLIC
@@ -37,6 +42,7 @@ target_include_directories(tensor_engine_core SYSTEM PUBLIC
 target_link_libraries(tensor_engine_core PUBLIC
     Eigen3::Eigen
     ${OpenCV_LIBS}
+    ${NVINFER_LIB}
 )
 
 include(cmake/CompilerWarnings.cmake)
