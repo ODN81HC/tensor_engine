@@ -60,6 +60,7 @@ add_executable(test_tensor_engine_core
     test/test_thread_pool.cpp
     test/test_cuda.cpp
     test/test_tensor.cpp
+    test/test_trt.cpp
 )
 # Tell CMake: "This test needs symbols and headers from tensor_engine_core and GoogleTest"
 target_link_libraries(test_tensor_engine_core PRIVATE
