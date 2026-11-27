@@ -69,3 +69,6 @@ Testing/
 
 # VSCode temp file
 .vscode/
+
+# Model folders
+models/
