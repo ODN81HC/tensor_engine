@@ -1,4 +1,5 @@
 #include "camera_stream_pipeline.hpp"
+#include "anime_stream_pipeline.hpp"
 
 #include <iostream>
 #include <opencv2/core.hpp>
@@ -43,7 +44,8 @@ int main()
         height_cap_4 = static_cast<int>(cap_4.get(cv::CAP_PROP_FRAME_HEIGHT));
     }
 
-    CameraStreamPipeline camera_stream_pipeline_0(width_cap_0, height_cap_0);
+    std::string anime_engine_path = "/home/tonan/study/cpp_study/tensor_engine/models/animeganv3.engine";
+    vision::AnimeStreamPipeline camera_stream_pipeline_0(width_cap_0, height_cap_0, anime_engine_path);
     CameraStreamPipeline camera_stream_pipeline_4(width_cap_4, height_cap_4);
 
     cv::Mat frame_0; 
@@ -54,17 +56,20 @@ int main()
         camera_stream_pipeline_4.submit_async(frame_4);
         // Process and get output frame to CPU
         const cv::Mat mat_out_0 = camera_stream_pipeline_0.sync_and_get_frame();
-        cv::Mat mat_out_4 = camera_stream_pipeline_4.sync_and_get_frame();
+        const cv::Mat mat_out_4 = camera_stream_pipeline_4.sync_and_get_frame();
+        
+        cv::imshow("Anime GAN GPU stream", mat_out_0);
+        cv::imshow("Grayscale stream", mat_out_4);
 
-        // Stitch them horizontally
-        if (height_cap_0 != height_cap_4 || width_cap_0 != width_cap_4)
-        {
-            // Resize cap_4 to the same size as cap_0
-            cv::resize(mat_out_4, mat_out_4, cv::Size(width_cap_0, height_cap_0));
-        }
-        const cv::Mat side_by_side = cv::Mat(height_cap_0, width_cap_0 * 2, CV_8UC1);
-        cv::hconcat(mat_out_0, mat_out_4, side_by_side);
-        cv::imshow("Dual camera GPU stream", side_by_side);
+        // // Stitch them horizontally
+        // if (height_cap_0 != height_cap_4 || width_cap_0 != width_cap_4)
+        // {
+        //     // Resize cap_4 to the same size as cap_0
+        //     cv::resize(mat_out_4, mat_out_4, cv::Size(width_cap_0, height_cap_0));
+        // }
+        // const cv::Mat side_by_side = cv::Mat(height_cap_0, width_cap_0 * 2, CV_8UC1);
+        // cv::hconcat(mat_out_0, mat_out_4, side_by_side);
+        // cv::imshow("Dual camera GPU stream", side_by_side);
 
         if (cv::waitKey(1) == esc_key)
         {
